@@ -1,0 +1,10 @@
+{
+  "name": "helixa",
+  "version": "1.0.0",
+  "description": "Query agent credibility scores, register identity, lock souls, and report session outcomes via the Helixa protocol on Base.",
+  "author": "helixa",
+  "homepage": "https://helixa.xyz",
+  "repository": "https://github.com/helixabot/helixa-agent-skills",
+  "skills": ["skills/helixa"],
+  "keywords": ["agent", "identity", "credibility", "base", "ethereum", "web3", "reputation"]
+}
