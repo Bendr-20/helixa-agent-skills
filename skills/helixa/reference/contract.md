@@ -2,92 +2,78 @@
 
 ## Deployment
 
-- **Contract**: `0x2e3B541C59D38b84E3Bc54e977200230A204Fe60`
-- **Chain**: Base (chainId 8453)
-- **RPC**: `https://mainnet.base.org`
-- **Explorer**: `https://basescan.org/address/0x2e3B541C59D38b84E3Bc54e977200230A204Fe60`
+- **Contract:** `0x2e3B541C59D38b84E3Bc54e977200230A204Fe60`
+- **Chain:** Base mainnet (chain ID 8453)
+- **RPC:** `https://mainnet.base.org`
+- **Explorer:** https://basescan.org/address/0x2e3B541C59D38b84E3Bc54e977200230A204Fe60
 
 ## Minting an Agent Identity
 
-**Price**: 0.0025 ETH
+The direct mint price is mutable. Call `mintPrice()` immediately before submitting a mint; do not hard-code an ETH amount.
 
-### Mint Function ABI
+### Minimal ABI
 
 ```json
 [
   {
+    "inputs": [],
+    "name": "mintPrice",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
+      { "internalType": "address", "name": "agentAddress", "type": "address" },
       { "internalType": "string", "name": "name", "type": "string" },
-      { "internalType": "string", "name": "metadataURI", "type": "string" }
+      { "internalType": "string", "name": "framework", "type": "string" },
+      { "internalType": "bool", "name": "soulbound", "type": "bool" }
     ],
     "name": "mint",
-    "outputs": [
-      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
     "stateMutability": "payable",
     "type": "function"
   }
 ]
 ```
 
-### Minting with ethers.js
+### ethers.js
 
 ```javascript
 import { ethers } from "ethers";
 
-const CONTRACT = "0x2e3B541C59D38b84E3Bc54e977200230A204Fe60";
-const ABI = [
-  "function mint(string name, string metadataURI) payable returns (uint256 tokenId)"
-];
-const MINT_PRICE = ethers.parseEther("0.0025");
+const contract = new ethers.Contract(
+  "0x2e3B541C59D38b84E3Bc54e977200230A204Fe60",
+  [
+    "function mintPrice() view returns (uint256)",
+    "function mint(address agentAddress,string name,string framework,bool soulbound) payable returns (uint256 tokenId)"
+  ],
+  signer
+);
 
-const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
-const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-const contract = new ethers.Contract(CONTRACT, ABI, signer);
-
-const tx = await contract.mint("my-agent", "ipfs://Qm.../metadata.json", {
-  value: MINT_PRICE
-});
-const receipt = await tx.wait();
-const tokenId = receipt.logs[0].args.tokenId;
-console.log("Minted token:", tokenId.toString());
+const value = await contract.mintPrice();
+const tx = await contract.mint(
+  agentWalletAddress,
+  "my-agent",
+  "custom",
+  false,
+  { value }
+);
+await tx.wait();
 ```
 
-### Minting with cast (Foundry)
+### Foundry cast
 
 ```bash
+PRICE=$(cast call 0x2e3B541C59D38b84E3Bc54e977200230A204Fe60 \
+  "mintPrice()(uint256)" --rpc-url https://mainnet.base.org)
+
 cast send 0x2e3B541C59D38b84E3Bc54e977200230A204Fe60 \
-  "mint(string,string)" \
-  "my-agent" "ipfs://Qm.../metadata.json" \
-  --value 0.0025ether \
+  "mint(address,string,string,bool)" \
+  0xYOUR_AGENT_ADDRESS "my-agent" "custom" false \
+  --value "$PRICE" \
   --rpc-url https://mainnet.base.org \
-  --private-key $PRIVATE_KEY
+  --keystore /path/to/keystore.json
 ```
 
-### Metadata Format
-
-The `metadataURI` should point to a JSON file (typically on IPFS) with:
-
-```json
-{
-  "name": "my-agent",
-  "description": "An autonomous trading agent",
-  "traits": ["trading", "defi", "autonomous"],
-  "framework": "langchain",
-  "image": "ipfs://Qm.../avatar.png"
-}
-```
-
-## Other Contract Functions
-
-### Read Functions
-
-- `ownerOf(uint256 tokenId) → address` — Get owner of agent token
-- `tokenURI(uint256 tokenId) → string` — Get metadata URI
-- `mintPrice() → uint256` — Current mint price
-
-### Write Functions
-
-- `mint(string name, string metadataURI) payable → uint256` — Mint new agent identity
-- `lockSoul(uint256 tokenId)` — Permanently lock agent soul (irreversible)
-- `updateMetadata(uint256 tokenId, string metadataURI)` — Update metadata (only if soul not locked)
+A soulbound mint is intentionally non-transferable. Confirm that choice before passing `true`.

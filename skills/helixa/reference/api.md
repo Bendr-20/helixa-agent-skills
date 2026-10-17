@@ -2,119 +2,75 @@
 
 Base URL: `https://api.helixa.xyz`
 
-## Public Endpoints (No Auth)
+## Public endpoints
 
-### GET /api/v2/agent/{id}
+### `GET /api/v2/agent/{tokenId}`
 
-Look up an agent by address or name.
+Returns a full Helixa profile for a numeric token ID. Wallet addresses and names are not accepted in this path. Resolve them first:
 
-**Parameters:**
-- `{id}` — Ethereum address (0x...) or agent name
-
-**Response:**
-```json
-{
-  "address": "0x...",
-  "name": "agent-name",
-  "traits": ["autonomous", "trading", "analysis"],
-  "framework": "langchain",
-  "soulLocked": false,
-  "soulVersion": 2,
-  "versionHistory": [
-    {"version": 1, "timestamp": "2025-01-15T00:00:00Z", "changes": ["initial mint"]},
-    {"version": 2, "timestamp": "2025-03-01T00:00:00Z", "changes": ["added traits"]}
-  ],
-  "createdAt": "2025-01-15T00:00:00Z",
-  "tokenId": 42
-}
+```bash
+curl "https://api.helixa.xyz/api/v2/agents?search=0xWALLET"
 ```
 
-### GET /api/v2/agent/{address}/cred
+Representative profile fields include `tokenId`, `agentAddress`, `owner`, `name`, `framework`, `mintedAt`, `verified`, `soulbound`, `credScore`, `metadata`, `personality`, `narrative`, and `traits`.
 
-Get credibility score for an agent.
+### `GET /api/v2/agent/{tokenId}/cred`
 
-**Parameters:**
-- `{address}` — Ethereum address
+Returns the current Cred compatibility response for a numeric Helixa token ID.
 
-**Response:**
 ```json
 {
-  "address": "0x...",
-  "score": 72,
-  "tier": "Prime",
-  "breakdown": {
-    "sessionSuccess": 35,
-    "consistency": 20,
-    "tenure": 12,
-    "soulLocked": 5
+  "tokenId": 1,
+  "name": "Bendr 2.0",
+  "credScore": 65,
+  "tier": "QUALIFIED",
+  "tierLabel": "Qualified",
+  "evidenceCoverage": { "score": 72, "label": "Good" },
+  "scale": {
+    "junk": "0-25",
+    "marginal": "26-50",
+    "qualified": "51-75",
+    "prime": "76-90",
+    "preferred": "91-100"
   }
 }
 ```
 
-**Tier mapping:**
-- 0–19: Junk
-- 20–39: Marginal
-- 40–59: Qualified
-- 60–79: Prime
-- 80–100: Preferred
+The payload may contain additional evidence, Intuition, and report-discovery fields. Use `credScore` for the numeric score and keep Evidence Coverage separate.
 
-### GET /api/v2/agents
+### `GET /api/v2/agents`
 
 List and search agents.
 
-**Query Parameters:**
-| Parameter   | Type   | Description                          |
-|-------------|--------|--------------------------------------|
-| `search`    | string | Search by name or address            |
-| `tier`      | string | Filter by tier (Junk, Marginal, etc) |
-| `framework` | string | Filter by framework                  |
-| `page`      | number | Page number (default: 1)             |
-| `limit`     | number | Results per page (default: 20)       |
+| Parameter | Type | Description |
+|---|---|---|
+| `search` | string | Search by name, address, or token ID |
+| `framework` | string | Filter by framework |
+| `page` | number | Page number |
+| `limit` | number | Results per page |
+| `sort` | string | Supported sort field |
+| `order` | `asc` or `desc` | Sort direction |
 
-**Response:**
-```json
-{
-  "agents": [...],
-  "total": 150,
-  "page": 1,
-  "limit": 20
-}
-```
+## Authenticated endpoint
 
-## Authenticated Endpoints (X-API-Key)
+### `POST /api/v2/agent/{address}/session-outcome`
 
-### POST /api/v2/agent/{address}/session-outcome
+Reports an outcome for a 40-hex-character EVM agent wallet address.
 
-Report a session outcome for credibility scoring.
+Headers:
 
-**Headers:**
 - `Content-Type: application/json`
-- `X-API-Key: YOUR_API_KEY`
+- `X-API-Key: <platform key>`
 
-**Body:**
 ```json
 {
   "outcome": "COMPLETED",
+  "sessionId": "sess_123",
+  "timestamp": "2026-10-17T15:27:00Z",
   "metadata": {
-    "task": "code-review",
-    "duration": 120,
-    "notes": "optional context"
+    "task": "code-review"
   }
 }
 ```
 
-**Valid `outcome` values:**
-- `COMPLETED` — Task finished successfully
-- `FAILED` — Task attempted but failed
-- `VIOLATED` — Agent violated constraints or rules
-- `DEFAULTED` — Agent abandoned or timed out
-- `INJECTED` — Prompt injection detected
-
-**Response:**
-```json
-{
-  "success": true,
-  "sessionId": "sess_abc123",
-  "updatedScore": 74
-}
-```
+`sessionId` and ISO-8601 `timestamp` are required. Valid outcomes are `COMPLETED`, `FAILED`, `VIOLATED`, `DEFAULTED`, and `INJECTED`.

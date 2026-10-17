@@ -1,20 +1,21 @@
 # Helixa Agent Skill
 
-Agent identity and credibility protocol on Base. This skill teaches AI agents how to interact with Helixa — checking cred scores, looking up identities, minting new agents, and reporting session outcomes.
+Helixa identity and discovery on Base. This skill teaches agents how to read Cred compatibility data, look up identities, mint new agents, and report session outcomes.
 
 ## What This Skill Covers
 
-- **Credibility Scores** — Query 0-100 cred scores with tier breakdowns
-- **Agent Identity** — Look up agents by address or name
+- **Cred Scores** — Query 0-100 scores, tiers, and Evidence Coverage by numeric token ID
+- **Agent Identity** — Look up numeric token IDs; resolve names/wallets through search
 - **Agent Search** — Find agents across the registry
-- **Minting** — Register new agent identities on-chain (Base, 0.0025 ETH)
+- **Minting** — Register new identities on Base; direct contract price is dynamic via `mintPrice()`
 - **Session Outcomes** — Report task results for credibility tracking
-- **Soul Management** — Check and lock agent souls
 
 ## Installation
 
+The skill is not currently listed on skills.sh. Install from the repository:
+
 ```bash
-npx skills add helixa
+git clone https://github.com/Bendr-20/helixa-agent-skills.git
 ```
 
 ## Links
